@@ -13,9 +13,8 @@ RETURN s.name AS name,
        collect(DISTINCT {name: c.name, industry: c.industry, walkMin: near.walkMin}) AS companies`,
   next: `MATCH (a:Station)-[n:NEXT]->(b:Station)
 RETURN a.name AS source, b.name AS target, n.line AS line, n.minutes AS minutes`,
-  reachable: `MATCH (start:Station {name: $from})
-MATCH (start)-[:NEXT*0..8]-(dest:Station)
-WITH start, dest, min(length(shortestPath((start)-[:NEXT*]-(dest)))) AS hops
+  reachable: `MATCH (start:Station {name: $from})-[rels:NEXT*0..8]-(dest:Station)
+WITH dest, min(size(rels)) AS hops
 WHERE hops <= $maxHops
 MATCH (c:Company)-[near:NEAR]->(dest)
 MATCH (c)-[:OFFERS]->(r:Role)-[:REQUIRES]->(sk:Skill {name: $skill})
@@ -30,11 +29,14 @@ RETURN dest.name AS station,
 ORDER BY hops, walkMin, company`,
   between: `MATCH (ca:Company {name: $a})-[:NEAR]->(sa:Station)
 MATCH (cb:Company {name: $b})-[:NEAR]->(sb:Station)
-MATCH path = shortestPath((sa)-[:NEXT*]-(sb))
+MATCH p = (sa)-[:NEXT*0..20]-(sb)
+WITH sa, sb, p, size(relationships(p)) AS hops
+ORDER BY hops
+LIMIT 1
 RETURN sa.name AS fromStation,
        sb.name AS toStation,
-       length(path) AS hops,
-       [n IN nodes(path) | n.name] AS stations`,
+       hops,
+       [n IN nodes(p) | n.name] AS stations`,
   expandCompany: `MATCH (c:Company {name: $name})-[:OFFERS]->(r:Role)
 OPTIONAL MATCH (r)-[:REQUIRES]->(sk:Skill)
 RETURN r.title AS title, r.kind AS kind, r.stipend AS stipend,
