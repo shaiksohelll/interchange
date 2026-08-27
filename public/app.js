@@ -114,7 +114,9 @@ async function getJson(url) {
 function pt(name, w, h) {
   const p = XY[name];
   if (!p) return { x: w / 2, y: h / 2 };
-  return { x: (p[0] / 100) * w, y: (p[1] / 100) * h };
+  const ox = w * 0.1;
+  const oy = h * 0.1;
+  return { x: ox + (p[0] / 100) * w * 0.8, y: oy + (p[1] / 100) * h * 0.8 };
 }
 
 function poly(names, w, h) {
@@ -137,6 +139,10 @@ function isLit(id) {
 
 function layout(graph, w, h) {
   const used = {};
+  const counts = {};
+  for (const node of graph.nodes) {
+    if (node.kind === "company") counts[node.station] = (counts[node.station] || 0) + 1;
+  }
   for (const node of graph.nodes) {
     if (node.kind === "station") {
       const p = pt(node.name, w, h);
@@ -146,9 +152,11 @@ function layout(graph, w, h) {
       const home = pt(node.station, w, h);
       const n = used[node.station] || 0;
       used[node.station] = n + 1;
-      const ang = -1.1 + n * 0.7;
-      node.x = home.x + Math.cos(ang) * 28;
-      node.y = home.y - 22 - n * 14;
+      const total = counts[node.station] || 1;
+      const ang = -Math.PI / 2 + (n - (total - 1) / 2) * 0.55;
+      const rad = 34 + n * 10;
+      node.x = home.x + Math.cos(ang) * rad;
+      node.y = home.y + Math.sin(ang) * rad;
     }
   }
 }
@@ -237,6 +245,7 @@ function draw() {
         node.name === "Nagole" ||
         node.name === "LB Nagar" ||
         node.name === "HITEC City" ||
+        node.name === "Madhapur" ||
         node.name === "JBS Parade Ground" ||
         (state.lit.size && lit);
       if (show) {
@@ -284,7 +293,7 @@ async function runQuery() {
       state.cypher = state.graph ? state.graph.cypher : "";
       state.ms = state.graph ? state.graph.ms : null;
     } else if (state.query === "corridor") {
-      const data = await getJson("/api/between?a=Microsoft&b=Student%20Tribe");
+      const data = await getJson("/api/between?a=Wexa%20AI&b=Student%20Tribe");
       state.rows = data.rows || [];
       state.cypher = data.cypher || "";
       state.ms = data.ms;
