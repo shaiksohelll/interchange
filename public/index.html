@@ -1,69 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Interchange — roles you can reach</title>
+  <title>Interchange — Hyderabad Metro jobs as a graph</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <a class="skip" href="#main">Skip to results</a>
-
-  <header class="top">
-    <div class="brand">
-      <span class="mark" aria-hidden="true"></span>
-      <div>
-        <p class="kicker">CognoDB · Hyderabad</p>
-        <h1>Interchange</h1>
-      </div>
-    </div>
-    <p class="lede">A job posting in Raidurg is not equally reachable from Miyapur and from Hitec City. This graph answers the question lists cannot: <strong>from this station, with this skill, which roles sit within N metro hops?</strong></p>
-    <p id="health" class="health" role="status">Checking graph…</p>
-  </header>
-
-  <section class="controls" aria-label="Search">
-    <div class="field">
-      <label for="from">From station</label>
-      <select id="from"></select>
-    </div>
-    <div class="field">
-      <label for="skill">Skill</label>
-      <select id="skill"></select>
-    </div>
-    <div class="field hops">
-      <label for="hops">Max hops <span id="hopsVal">5</span></label>
-      <input id="hops" type="range" min="0" max="8" value="5" />
-    </div>
-    <button id="search" type="button">Find roles</button>
-  </section>
-
-  <main id="main">
-    <section class="panel" aria-labelledby="resultsTitle">
-      <div class="panel-head">
-        <h2 id="resultsTitle">Reachable roles</h2>
-        <p id="resultMeta" class="meta"></p>
-      </div>
-      <div id="empty" class="empty">Pick a station and a skill. The graph walks the metro, then hangs companies off each stop.</div>
-      <div id="error" class="error" hidden></div>
-      <div id="loading" class="loading" hidden>Walking the metro graph…</div>
-      <ol id="results" class="results" hidden></ol>
-    </section>
-
-    <section class="panel" aria-labelledby="betweenTitle">
-      <h2 id="betweenTitle">Company to company</h2>
-      <p class="hint">shortestPath between two offices. A recursive SQL CTE plus three joins; one Cypher pattern.</p>
-      <div class="row">
-        <select id="coA" aria-label="Company A"></select>
-        <select id="coB" aria-label="Company B"></select>
-        <button id="between" type="button">Path</button>
-      </div>
-      <p id="betweenOut" class="path-out"></p>
-    </section>
-  </main>
-
-  <footer>
-    <p>Seeded sample of Hyderabad Metro + nearby tech offices. Not live job listings.</p>
-  </footer>
+  <div id="app"></div>
   <script src="/app.js"></script>
 </body>
 </html>

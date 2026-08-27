@@ -3,8 +3,11 @@ import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { closeDriver, verify } from "./db.js";
+import { localCityGraph } from "./fallback.js";
 import {
   betweenCompanies,
+  cityGraph,
+  expandCompany,
   listCompanies,
   listSkills,
   listStations,
@@ -32,11 +35,29 @@ function dbUnavailable(err) {
   );
 }
 
+async function timed(work) {
+  const t0 = Date.now();
+  const data = await work();
+  return { ...data, ms: Date.now() - t0 };
+}
+
 app.get(
   "/api/health",
   asyncRoute(async (_req, res) => {
     await verify();
     res.json({ ok: true, database: "cognodb" });
+  })
+);
+
+app.get(
+  "/api/graph",
+  asyncRoute(async (_req, res) => {
+    try {
+      res.json(await timed(cityGraph));
+    } catch (err) {
+      if (!dbUnavailable(err)) throw err;
+      res.json({ ...localCityGraph(), ms: 0 });
+    }
   })
 );
 
@@ -71,7 +92,7 @@ app.get(
       res.status(400).json({ error: "from and skill are required" });
       return;
     }
-    res.json(await reachable({ from, skill, maxHops }));
+    res.json(await timed(() => reachable({ from, skill, maxHops })));
   })
 );
 
@@ -84,7 +105,19 @@ app.get(
       res.status(400).json({ error: "a and b company names are required" });
       return;
     }
-    res.json(await betweenCompanies({ a, b }));
+    res.json(await timed(() => betweenCompanies({ a, b })));
+  })
+);
+
+app.get(
+  "/api/expand",
+  asyncRoute(async (req, res) => {
+    const name = String(req.query.name || "").trim();
+    if (!name) {
+      res.status(400).json({ error: "name is required" });
+      return;
+    }
+    res.json(await timed(() => expandCompany({ name })));
   })
 );
 

@@ -2,79 +2,66 @@ import "dotenv/config";
 import { companies, lines, segments, stations } from "../data/graph.js";
 import { closeDriver, runWrite, verify } from "./db.js";
 
-async function seed() {
-  await verify();
-
-  await runWrite(`MATCH (n) DETACH DELETE n`);
-
-  for (const line of lines) {
-    await runWrite(`MERGE (l:Line {name: $name}) SET l.color = $color`, line);
-  }
-
-  for (const station of stations) {
-    await runWrite(`MERGE (s:Station {name: $name})`, { name: station.name });
-    for (const lineName of station.lines) {
-      await runWrite(
-        `MATCH (s:Station {name: $station})
-         MATCH (l:Line {name: $line})
-         MERGE (s)-[:ON_LINE]->(l)`,
-        { station: station.name, line: lineName }
-      );
-    }
-  }
-
+function segmentRows() {
+  const rows = [];
   for (const [lineName, ...edges] of segments) {
     for (const [from, to, minutes] of edges) {
-      await runWrite(
-        `MATCH (a:Station {name: $from})
-         MATCH (b:Station {name: $to})
-         MERGE (a)-[ab:NEXT {line: $line}]->(b)
-         SET ab.minutes = $minutes
-         MERGE (b)-[ba:NEXT {line: $line}]->(a)
-         SET ba.minutes = $minutes`,
-        { from, to, minutes, line: lineName }
-      );
+      rows.push({ from, to, minutes, line: lineName });
     }
   }
+  return rows;
+}
 
-  for (const company of companies) {
-    await runWrite(
-      `MATCH (s:Station {name: $station})
-       MERGE (c:Company {name: $name})
-       SET c.industry = $industry
-       MERGE (c)-[n:NEAR]->(s)
-       SET n.walkMin = $walkMin`,
-      {
-        name: company.name,
-        industry: company.industry,
-        station: company.station,
-        walkMin: company.walkMin,
-      }
-    );
+async function seed() {
+  await verify();
+  await runWrite(`MATCH (n) DETACH DELETE n`);
 
-    for (const role of company.roles) {
-      await runWrite(
-        `MATCH (c:Company {name: $company})
-         MERGE (r:Role {title: $title, company: $company})
-         SET r.kind = $kind, r.stipend = $stipend
-         MERGE (c)-[:OFFERS]->(r)`,
-        {
-          company: company.name,
-          title: role.title,
-          kind: role.kind,
-          stipend: role.stipend,
-        }
-      );
-      for (const skill of role.skills) {
-        await runWrite(
-          `MATCH (r:Role {title: $title, company: $company})
-           MERGE (sk:Skill {name: $skill})
-           MERGE (r)-[:REQUIRES]->(sk)`,
-          { title: role.title, company: company.name, skill }
-        );
-      }
-    }
-  }
+  await runWrite(
+    `UNWIND $lines AS line
+     MERGE (l:Line {name: line.name})
+     SET l.color = line.color`,
+    { lines }
+  );
+
+  await runWrite(
+    `UNWIND $stations AS s
+     MERGE (st:Station {name: s.name})
+     WITH st, s
+     UNWIND s.lines AS lineName
+     MATCH (l:Line {name: lineName})
+     MERGE (st)-[:ON_LINE]->(l)`,
+    { stations }
+  );
+
+  await runWrite(
+    `UNWIND $edges AS e
+     MATCH (a:Station {name: e.from})
+     MATCH (b:Station {name: e.to})
+     MERGE (a)-[ab:NEXT {line: e.line}]->(b)
+     SET ab.minutes = e.minutes
+     MERGE (b)-[ba:NEXT {line: e.line}]->(a)
+     SET ba.minutes = e.minutes`,
+    { edges: segmentRows() }
+  );
+
+  await runWrite(
+    `UNWIND $companies AS co
+     MATCH (s:Station {name: co.station})
+     MERGE (c:Company {name: co.name})
+     SET c.industry = co.industry
+     MERGE (c)-[n:NEAR]->(s)
+     SET n.walkMin = co.walkMin
+     WITH c, co
+     UNWIND co.roles AS role
+     MERGE (r:Role {title: role.title, company: co.name})
+     SET r.kind = role.kind, r.stipend = role.stipend
+     MERGE (c)-[:OFFERS]->(r)
+     WITH r, role
+     UNWIND role.skills AS skillName
+     MERGE (sk:Skill {name: skillName})
+     MERGE (r)-[:REQUIRES]->(sk)`,
+    { companies }
+  );
 
   const counts = await runWrite(
     `MATCH (n) RETURN labels(n)[0] AS label, count(*) AS n ORDER BY label`
