@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Reachable internships on the Hyderabad Metro, modeled as a CognoDB graph.",
+  "description": "Hyderabad Metro jobs as a live CognoDB graph — commute is the query.",
   "scripts": {
     "start": "node src/server.js",
     "seed": "node src/seed.js",
