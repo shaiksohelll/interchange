@@ -7,7 +7,15 @@ function required(name) {
     err.code = "CONFIG";
     throw err;
   }
-  return value;
+  return value.replace(/^\uFEFF/, "").trim().replace(/^["']|["']$/g, "");
+}
+
+/** CognoDB's cert is from their own CA. bolt+s (public CA only) ECONNRESETs on Windows. */
+function cognodbUri() {
+  let uri = required("COGNODB_URI");
+  if (uri.startsWith("bolt+s://")) uri = "bolt+ssc://" + uri.slice("bolt+s://".length);
+  if (uri.startsWith("neo4j+s://")) uri = "neo4j+ssc://" + uri.slice("neo4j+s://".length);
+  return uri;
 }
 
 let driver;
@@ -15,7 +23,7 @@ let driver;
 export function getDriver() {
   if (!driver) {
     driver = neo4j.driver(
-      required("COGNODB_URI"),
+      cognodbUri(),
       neo4j.auth.basic(process.env.COGNODB_USER || "cognodb", required("COGNODB_PASSWORD"))
     );
   }
