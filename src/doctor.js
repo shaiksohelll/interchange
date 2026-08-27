@@ -32,6 +32,12 @@ async function main() {
   const host = raw.replace(/^[a-z0-9+]+:\/\//i, "").split("/")[0].split(":")[0];
   console.log("scheme:", (raw.split("://")[0] || "(missing)"));
   console.log("host:", host || "(missing)");
+  if (/your-instance/i.test(host)) {
+    console.log("ERROR: .env still has YOUR-INSTANCE.");
+    console.log("Open notepad .env and set COGNODB_URI to your real host from console.cognodb.com");
+    console.log("Example: bolt+s://db-xxxxxxxx.bravo.databases.cognodb.com");
+    process.exit(1);
+  }
   console.log("user:", process.env.COGNODB_USER || "(missing)");
   console.log("password length:", pass.length, pass.length ? "(hidden)" : "(empty)");
 
