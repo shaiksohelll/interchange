@@ -165,8 +165,8 @@ export const companies = [
   {
     name: "Wexa AI",
     industry: "AI infrastructure",
-    station: "HITEC City",
-    walkMin: 8,
+    station: "Raidurg",
+    walkMin: 18,
     roles: [
       { title: "Software Engineer Intern",
         kind: "intern",
@@ -277,8 +277,8 @@ export const companies = [
   {
     name: "Student Tribe",
     industry: "Campus product",
-    station: "Punjagutta",
-    walkMin: 10,
+    station: "Madhapur",
+    walkMin: 8,
     roles: [
       { title: "Full Stack Intern",
         kind: "intern",
